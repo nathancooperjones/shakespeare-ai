@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -98,8 +100,9 @@ class ShakespeareLearner():
                           'Iteration: {}'.format(iteration),
                           'Loss: {}'.format(loss_value))
 
-                if iteration % 100 == 0:
+                if iteration % 1000 == 0:
                     self.predict(self.initial_words)
+                    Path(self.checkpoint_path).mkdir(parents=True, exist_ok=True)
                     torch.save(self.net.state_dict(),
                                f'{self.checkpoint_path}/model-{iteration}.pth')
 
