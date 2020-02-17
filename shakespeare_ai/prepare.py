@@ -1,5 +1,6 @@
 from collections import Counter
 
+import nltk
 import numpy as np
 
 
@@ -31,9 +32,11 @@ def get_data_from_file(train_file, batch_size, seq_size):
         Array of integers of size `seq_size` for evaluating model output
 
     """
+    nltk.download('punkt')
+
     with open(train_file, 'r') as f:
         text = f.read()
-    text = text.split()
+    text = nltk.tokenize.word_tokenize(text)
 
     # set up word to integer encoding system
     word_counts = Counter(text)

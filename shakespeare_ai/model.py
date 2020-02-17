@@ -14,19 +14,24 @@ class RNNModule(nn.Module):
         Length of sequence of words sent to the LSTM
     embedding_size: int
         Embedding size for each word in the vocab
-    lstm_size: int
+    hidden_size: int
         The number of features in the hidden state of the LSTM
+    num_layers: int
+        Number of recurrent layers for the LSTM
 
     """
-    def __init__(self, n_vocab, seq_size, embedding_size, lstm_size):
+    def __init__(self, n_vocab, seq_size, embedding_size, hidden_size, num_layers):
         super(RNNModule, self).__init__()
         self.seq_size = seq_size
-        self.lstm_size = lstm_size
+        self.hidden_size = hidden_size
         self.embedding = nn.Embedding(n_vocab, embedding_size)
-        self.lstm = nn.LSTM(embedding_size,
-                            lstm_size,
+        self.num_layers = num_layers
+
+        self.lstm = nn.LSTM(input_size=embedding_size,
+                            hidden_size=hidden_size,
+                            num_layers=num_layers,
                             batch_first=True)
-        self.dense = nn.Linear(lstm_size, n_vocab)
+        self.dense = nn.Linear(hidden_size, n_vocab)
 
     def forward(self, x, prev_state):
         """
@@ -74,5 +79,5 @@ class RNNModule(nn.Module):
             2nd element: Cell state for each element in the batch, all zeroes
 
         """
-        return (torch.zeros(1, batch_size, self.lstm_size),
-                torch.zeros(1, batch_size, self.lstm_size))
+        return (torch.zeros(self.num_layers, batch_size, self.hidden_size),
+                torch.zeros(self.num_layers, batch_size, self.hidden_size))
