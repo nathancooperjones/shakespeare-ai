@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
+import tqdm
 
 from shakespeare_ai.model import RNNModule
 from shakespeare_ai.prepare import get_data_from_file
@@ -48,7 +49,7 @@ class ShakespeareLearner():
                  seq_size=32,
                  embedding_size=64,
                  lstm_size=64,
-                 lr=0.01,
+                 lr=1e-2,
                  gradients_norm=5,
                  initial_words=None,
                  predict_top_k=5,
@@ -97,8 +98,14 @@ class ShakespeareLearner():
             Number of epochs to train the model for (default 50)
 
         """
+        try:
+            # we don't need it writing a multiple lines per progress bump
+            tqdm._instances.clear()
+        except AttributeError:
+            pass
+
         iteration = 0
-        for epoch in range(num_epochs):
+        for epoch in tqdm.tqdm(range(num_epochs)):
             batches = self._get_batches(self.in_text, self.out_text, self.batch_size, self.seq_size)
             hidden_state, cell_state = self.model.zero_state(self.batch_size)
 
@@ -146,10 +153,11 @@ class ShakespeareLearner():
                     self.save(f'{self.checkpoint_path}/model-{iteration}.pth')
 
             if self.verbose:
-                print('Epoch: {}/{}'.format(epoch, 200),
-                      'Iteration: {}'.format(iteration),
-                      'Loss: {}'.format(loss_value))
-                self.predict(self.initial_words)
+                tqdm.tqdm.write('Epoch: {}/{}'.format(epoch, 200),
+                                'Iteration: {}'.format(iteration),
+                                'Loss: {}'.format(loss_value))
+                tqdm.tqdm.write(self.predict(self.initial_words))
+                tqdm.tqdm.write('-----')
 
     def _get_batches(self, in_text, out_text, batch_size, seq_size):
         """
@@ -201,17 +209,20 @@ class ShakespeareLearner():
         cell_state = cell_state.to(self.device)
 
         if start is None:
+            encoded_start = [np.random.randint(0, len(self.int_to_vocab))]
+        else:
             try:
-                sentence = [self.int_to_vocab[np.random.randint(0, len(self.int_to_vocab))]]
+                encoded_start = [self.vocab_to_int[word] for word in start.split()]
             except KeyError as oops:
                 print('Unknown vocabulary:', oops)
                 print('Using random start seed instead.')
-                sentence = start.split()
-        else:
-            sentence = start.split()
+                encoded_start = [np.random.randint(0, len(self.int_to_vocab))]
 
-        for word in sentence:
-            ix = torch.tensor([[self.vocab_to_int[word]]]).to(self.device)
+        # reverse engineer the start to become the beginning of the predicted sentence
+        sentence = [self.int_to_vocab[word_int] for word_int in encoded_start]
+
+        for encoded_word in encoded_start:
+            ix = torch.tensor([[encoded_word]]).to(self.device)
             output, (hidden_state, cell_state) = self.model(ix, (hidden_state, cell_state))
 
         _, top_ix = torch.topk(output[0], k=self.predict_top_k)
@@ -229,7 +240,7 @@ class ShakespeareLearner():
             choice = np.random.choice(choices[0])
             sentence.append(self.int_to_vocab[choice])
 
-        print(' '.join(sentence))
+        return ' '.join(sentence)
 
     def save(self, filename):
         """
