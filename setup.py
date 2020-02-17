@@ -9,7 +9,7 @@ with open('README.md') as r:
 setup(
     name='shakespeare_ai',
     version=__version__,
-    description="It's no Shakespeare, taken to a whole new level.",
+    description="Well, it's no Shakespeare, taken to a whole new level.",
     long_description=readme,
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
