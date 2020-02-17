@@ -88,6 +88,9 @@ class ShakespeareLearner():
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
+        self.epochs = 0
+        self.iterations = 0
+
     def train(self, num_epochs=50):
         """
         Train the LSTM model.
@@ -104,8 +107,7 @@ class ShakespeareLearner():
         except AttributeError:
             pass
 
-        iteration = 0
-        for epoch in tqdm.tqdm(range(num_epochs)):
+        for epoch in tqdm.tqdm(range(num_epochs), position=0, unit=' epoch', desc=''):
             batches = self._get_batches(self.in_text, self.out_text, self.batch_size, self.seq_size)
             hidden_state, cell_state = self.model.zero_state(self.batch_size)
 
@@ -113,7 +115,7 @@ class ShakespeareLearner():
             hidden_state = hidden_state.to(self.device)
             cell_state = cell_state.to(self.device)
             for input, expected_output in batches:
-                iteration += 1
+                self.iterations += 1
 
                 # Tell it we are in training mode
                 self.model.train()
@@ -148,16 +150,18 @@ class ShakespeareLearner():
 
                 self.optimizer.step()
 
-                if (self.checkpoint_frequency > 0) and (iteration % self.checkpoint_frequency == 0):
+                if (self.checkpoint_frequency > 0) and (self.iterations % self.checkpoint_frequency == 0):
                     Path(self.checkpoint_path).mkdir(parents=True, exist_ok=True)
-                    self.save(f'{self.checkpoint_path}/model-{iteration}.pth')
+                    self.save(f'{self.checkpoint_path}/model-{self.iterations}.pth')
 
             if self.verbose:
-                tqdm.tqdm.write('Epoch: {}/{}'.format(epoch, 200),
-                                'Iteration: {}'.format(iteration),
-                                'Loss: {}'.format(loss_value))
-                tqdm.tqdm.write(self.predict(self.initial_words))
-                tqdm.tqdm.write('-----')
+                print(
+                    'Epoch: {0:^3}  Iteration: {0:^6}  Loss: {1:^10.5f}'
+                    .format(self.epochs, self.iterations, loss_value)
+                )
+                print(self.predict(self.initial_words))
+
+            self.epochs += 1
 
     def _get_batches(self, in_text, out_text, batch_size, seq_size):
         """
