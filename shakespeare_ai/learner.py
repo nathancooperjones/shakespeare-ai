@@ -23,8 +23,10 @@ class ShakespeareLearner():
         Length of sequence of words sent to the model (default 32)
     embedding_size: int
         Embedding size for each word in the vocab (default 64)
-    lstm_size: int
+    hidden_size: int
         The number of features in the hidden state of the LSTM (default 64)
+    num_layers: int
+        Number of recurrent layers for the LSTM (default 1)
     lr: float
         Learning rate for Adam optimizer (default 0.01)
     gradients_norm: float
@@ -48,7 +50,8 @@ class ShakespeareLearner():
                  batch_size=16,
                  seq_size=32,
                  embedding_size=64,
-                 lstm_size=64,
+                 hidden_size=64,
+                 num_layers=1,
                  lr=1e-2,
                  gradients_norm=5,
                  initial_words=None,
@@ -60,7 +63,8 @@ class ShakespeareLearner():
         self.batch_size = batch_size
         self.seq_size = seq_size
         self.embedding_size = embedding_size
-        self.lstm_size = lstm_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
         self.lr = lr
         self.gradients_norm = gradients_norm
         self.initial_words = initial_words
@@ -82,7 +86,8 @@ class ShakespeareLearner():
         self.model = RNNModule(self.n_vocab,
                                self.seq_size,
                                self.embedding_size,
-                               self.lstm_size)
+                               self.hidden_size,
+                               self.num_layers)
         self.model = self.model.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss()
