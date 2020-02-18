@@ -1,5 +1,7 @@
 from pathlib import Path
+import re
 
+import nltk
 import numpy as np
 import torch
 import torch.nn as nn
@@ -34,7 +36,7 @@ class ShakespeareLearner():
     initial_words: list of strings
         Initial string seed for prediction text. If `None`, will choose a random word
         in the vocabulary to begin the predicted text (default None)
-    predict_top_k: int
+    temperature: int
         How many of the top predicted words to randomly pick during each word generation (default 5)
     checkpoint_path: int
         Path to save model checkpoints (default 'checkpoint')
@@ -55,7 +57,7 @@ class ShakespeareLearner():
                  lr=1e-2,
                  gradients_norm=5,
                  initial_words=None,
-                 predict_top_k=5,
+                 temperature=5,
                  checkpoint_path='checkpoint',
                  checkpoint_frequency=1000,
                  verbose=True):
@@ -68,7 +70,7 @@ class ShakespeareLearner():
         self.lr = lr
         self.gradients_norm = gradients_norm
         self.initial_words = initial_words
-        self.predict_top_k = predict_top_k
+        self.temperature = temperature
         self.checkpoint_path = checkpoint_path
         self.checkpoint_frequency = checkpoint_frequency
         self.verbose = verbose
@@ -95,6 +97,8 @@ class ShakespeareLearner():
 
         self.epochs = 0
         self.iterations = 0
+
+        self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
     def train(self, num_epochs=50):
         """
@@ -161,7 +165,7 @@ class ShakespeareLearner():
 
             if self.verbose:
                 print(
-                    'Epoch: {0:^3}  Iteration: {0:^6}  Loss: {1:^10.5f}'
+                    'Epoch: {0:^3}  Iteration: {1:^9}  Loss: {2:^10.5f}'
                     .format(self.epochs, self.iterations, loss_value)
                 )
                 print(self.predict(self.initial_words))
@@ -234,7 +238,7 @@ class ShakespeareLearner():
             ix = torch.tensor([[encoded_word]]).to(self.device)
             output, (hidden_state, cell_state) = self.model(ix, (hidden_state, cell_state))
 
-        _, top_ix = torch.topk(output[0], k=self.predict_top_k)
+        _, top_ix = torch.topk(output[0], k=self.temperature)
         choices = top_ix.tolist()
         choice = np.random.choice(choices[0])
 
@@ -244,12 +248,18 @@ class ShakespeareLearner():
             ix = torch.tensor([[choice]]).to(self.device)
             output, (hidden_state, cell_state) = self.model(ix, (hidden_state, cell_state))
 
-            _, top_ix = torch.topk(output[0], k=self.predict_top_k)
+            _, top_ix = torch.topk(output[0], k=self.temperature)
             choices = top_ix.tolist()
             choice = np.random.choice(choices[0])
             sentence.append(self.int_to_vocab[choice])
 
-        return ' '.join(sentence)
+        prediction = ' '.join(sentence)
+        prediction = re.sub(r'\s([?.!,"](?:\s|$))', r'\1', prediction)
+        prediction_sentences = self.sentence_tokenizer.tokenize(prediction)
+        prediction_sentences = [sentence.capitalize() for sentence in prediction_sentences]
+        prediction = ' '.join(prediction_sentences)
+
+        return prediction
 
     def save(self, filename):
         """
