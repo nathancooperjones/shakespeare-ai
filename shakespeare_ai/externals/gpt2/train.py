@@ -11,10 +11,12 @@ import time
 import tqdm
 from tensorflow.core.protobuf import rewriter_config_pb2
 
-import model, sample, encoder
-from load_dataset import load_dataset, Sampler
-from accumulate import AccumulatingOptimizer
-import memory_saving_gradients
+import shakespeare_ai.externals.gpt2.src.model as model
+import shakespeare_ai.externals.gpt2.src.sample as sample
+import shakespeare_ai.externals.gpt2.src.encoder as encoder
+from shakespeare_ai.externals.gpt2.src.load_dataset import load_dataset, Sampler
+from shakespeare_ai.externals.gpt2.src.accumulate import AccumulatingOptimizer
+import shakespeare_ai.externals.gpt2.src.memory_saving_gradients as memory_saving_gradients
 
 CHECKPOINT_DIR = 'checkpoint'
 SAMPLE_DIR = 'samples'

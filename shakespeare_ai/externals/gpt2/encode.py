@@ -6,8 +6,8 @@
 import argparse
 import numpy as np
 
-import encoder
-from load_dataset import load_dataset
+import shakespeare_ai.externals.gpt2.src.encoder as encoder
+from shakespeare_ai.externals.gpt2.src.load_dataset import load_dataset
 
 parser = argparse.ArgumentParser(
     description='Pre-encode text files into tokenized training set.',

@@ -5,8 +5,10 @@ import nltk
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import tqdm
 
+from shakespeare_ai.externals.ranger import RangerVA
 from shakespeare_ai.model import RNNModule
 from shakespeare_ai.prepare import get_data_from_file
 
@@ -93,14 +95,19 @@ class ShakespeareLearner():
         self.model = self.model.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = RangerVA(self.model.parameters(), lr=self.lr)
 
         self.epochs = 0
-        self.iterations = 0
+        self.batches = 0
+        self.loss_history_ = list()
 
         self.sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
-    def train(self, num_epochs=50):
+    def train(self,
+              num_epochs=50,
+              scheduler_patience=0,
+              scheduler_factor=0.1,
+              scheduler_threshold=1e-4):
         """
         Train the LSTM model.
 
@@ -108,8 +115,26 @@ class ShakespeareLearner():
         ----------
         num_epochs: int
             Number of epochs to train the model for (default 50)
+        scheduler_patience: int
+            number of epochs of a plateaued learning rate before reducing the learning
+            rate by a factor of `scheduler_factor` for `torch.optim.lr_scheduler.ReduceLROnPlateau`
+            (default 0)
+        scheduler_factor: int
+            when validation loss plateuas after `scheduler_patience`
+            epochs, factor of which the learning rate should be reduced
+            by for `torch.optim.lr_scheduler.ReduceLROnPlateau` (default 0.1)
+        scheduler_threshold: float
+            threshold for measuring the new optimum, to only focus on significant changes
+            for `torch.optim.lr_scheduler,ReduceLROnPlateau` (default 1e-4)
 
         """
+        scheduler = ReduceLROnPlateau(self.optimizer,
+                                      mode='min',
+                                      factor=scheduler_factor,
+                                      patience=scheduler_patience,
+                                      threshold=scheduler_threshold,
+                                      verbose=True)
+
         try:
             # we don't need it writing a multiple lines per progress bump
             tqdm._instances.clear()
@@ -123,8 +148,10 @@ class ShakespeareLearner():
             # Transfer data to GPU
             hidden_state = hidden_state.to(self.device)
             cell_state = cell_state.to(self.device)
+
+            avg_loss_list = list()
             for input, expected_output in batches:
-                self.iterations += 1
+                self.batches += 1
 
                 # Tell it we are in training mode
                 self.model.train()
@@ -144,7 +171,7 @@ class ShakespeareLearner():
                 hidden_state = hidden_state.detach()
                 cell_state = cell_state.detach()
 
-                loss_value = loss.item()
+                avg_loss_list.append(loss.item())
 
                 # Perform back-propagation
                 loss.backward(retain_graph=True)
@@ -159,14 +186,17 @@ class ShakespeareLearner():
 
                 self.optimizer.step()
 
-                if (self.checkpoint_frequency > 0) and (self.iterations % self.checkpoint_frequency == 0):
+                if (self.checkpoint_frequency > 0) and (self.batches % self.checkpoint_frequency == 0):
                     Path(self.checkpoint_path).mkdir(parents=True, exist_ok=True)
-                    self.save(f'{self.checkpoint_path}/model-{self.iterations}.pth')
+                    self.save(f'{self.checkpoint_path}/model-{self.batches}.pth')
 
+            avg_loss = np.mean(np.array(avg_loss_list))
+            self.loss_history_.append(avg_loss)
+            scheduler.step(avg_loss, epoch=self.epochs)
             if self.verbose:
                 print(
-                    'Epoch: {0:^3}  Iteration: {1:^9}  Loss: {2:^10.5f}'
-                    .format(self.epochs, self.iterations, loss_value)
+                    'Epoch: {0:^3}  Batches: {1:^11}  Loss: {2:^10.5f}'
+                    .format(self.epochs, self.batches, avg_loss)
                 )
                 print(self.predict(self.initial_words))
 
@@ -254,7 +284,7 @@ class ShakespeareLearner():
             sentence.append(self.int_to_vocab[choice])
 
         prediction = ' '.join(sentence)
-        prediction = re.sub(r'\s([?.!,"](?:\s|$))', r'\1', prediction)
+        prediction = re.sub(r'\s([?.!,"\(\[\)\]](?:\s|$))', r'\1', prediction)
         prediction_sentences = self.sentence_tokenizer.tokenize(prediction)
         prediction_sentences = [sentence.capitalize() for sentence in prediction_sentences]
         prediction = ' '.join(prediction_sentences)

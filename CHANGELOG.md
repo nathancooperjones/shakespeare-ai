@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](http://semver.org/).
 
+# [0.2.2] - 2020-2-18
+### Added
+- loss history is stored in the attribute `loss_history_`
+- `ReduceLROnPlateau` learning rate scheduler to `learner.train` to allow for automated fine-tuning of models during a regular training cycle
+### Changed
+ - the Ranger optimizer in `shakespeare_ai.externals.ranger.py`, used as the optimizer in `learner.py`
+ - `iterations` is now referred to as `batches` in the verbose output of `learner.train`
+ - GPT-2 source code is now stored in `shakespeare_ai.externals`
+### Fixed
+ - reported loss is not the running average over the epoch rather than from the latest batch
+
 # [0.2.1] - 2020-2-18
 ### Fixed
  - removed unnecessary spaces before punctuation and ensured correct sentence capitalization when returning output in `predict`
