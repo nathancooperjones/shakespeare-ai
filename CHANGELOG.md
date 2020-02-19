@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](http://semver.org/).
 
+# [0.3.0] - 2020-2-19
+### Added
+ - updated `README` with usage and development information, replacing the need for the `run_gpt2.bash` script
+
 # [0.2.3] - 2020-2-18
 ### Added
  - `run_gpt2.bash` script to download models, encode texts, and train a GPT-2 model
