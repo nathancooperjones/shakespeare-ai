@@ -4039,3 +4039,4 @@ FOOL [sings]
 	But that's all one, our play is done,
 	   And we'll strive to please you every day.
 [He exits.]
+<|endoftext|>

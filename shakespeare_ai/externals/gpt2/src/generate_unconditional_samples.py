@@ -6,7 +6,9 @@ import os
 import numpy as np
 import tensorflow as tf
 
-import model, sample, encoder
+import model
+import sample
+import encoder
 
 def sample_model(
     model_name='117M',

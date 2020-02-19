@@ -3,10 +3,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](http://semver.org/).
 
+# [0.2.3] - 2020-2-18
+### Added
+ - `run_gpt2.bash` script to download models, encode texts, and train a GPT-2 model
+ - exact library versions since Tensorflow 2 breaks oh so many things in GPT-2, yet it is not pinned
+### Changed
+ - all texts in `data/texts` are now GPT-2-ready by ending in `<|endoftext|>`
+### Fixed
+ - the mess that was the GPT-2 imports - geez!
+
 # [0.2.2] - 2020-2-18
 ### Added
-- loss history is stored in the attribute `loss_history_`
-- `ReduceLROnPlateau` learning rate scheduler to `learner.train` to allow for automated fine-tuning of models during a regular training cycle
+ - loss history is stored in the attribute `loss_history_`
+ - `ReduceLROnPlateau` learning rate scheduler to `learner.train` to allow for automated fine-tuning of models during a regular training cycle
 ### Changed
  - the Ranger optimizer in `shakespeare_ai.externals.ranger.py`, used as the optimizer in `learner.py`
  - `iterations` is now referred to as `batches` in the verbose output of `learner.train`
