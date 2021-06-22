@@ -1,6 +1,6 @@
 # Shakespeare AI
 
-![](https://www.pace.edu/magazine/sites/default/files/styles/basic_page_featured_image/public/systems-and-shakespare.jpg?itok=GTIyKmmA)
+![](https://images.theconversation.com/files/214570/original/file-20180412-570-18x3skh.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=754&fit=clip)
 
 > "Unpregnant o'ercharged falsely, I'll not, I have been the sourest-natured of my life. I will have I, and he shall have a man. I will not be. Shepherd, [ reads lear and queen of norfolk ] o lord!"
 >
